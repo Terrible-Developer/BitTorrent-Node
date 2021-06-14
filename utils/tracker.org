@@ -1,0 +1,75 @@
+#+TITLE: Tracker
+#+DESCRIPTION: file related to the torrent tracker
+#+PROPERTY: :tangle "./tracker.js"
+
+* Explanation
+?
+
+* Code
+** Imports
+#+BEGIN_SRC js :tangle yes
+import dgram from 'dgram';
+import { Buffer } from 'buffer';
+import { urlParse } from 'url';
+#+END_SRC
+
+** Methods
+#+BEGIN_SRC js :tangle yes
+const udpSend = (torrent, message, rawUrl, callback) => {
+    const url = urlParse(rawUrl);
+    socket.send(message, 0, message.length, url.port, url.host, callback);
+};
+
+const responseType = response => {
+
+};
+
+const buildConnectionRequest = () => {
+
+};
+
+const parseConnectionResponse = response => {
+
+};
+
+const buildAnnounceRequest = connectionId => {
+
+};
+
+const parseAnnounceResponse = response => {
+
+};
+
+const getPeers = (torrent, callback) => {
+    const url = urlParse(torrent.announce.toString("utf8"));
+    const socket = dgram.createSocket('udp4');
+
+    udpSend(socket, buildConnectionRequest(), url);
+
+    socket.on('message', response => {
+        if(responseType(response) === 'connect'){
+            const connectionResponse = parseConnectionResponse(response);
+            const announceRequest = buildAnnounceRequest(connectionResponse.connectionId);
+            udpSend(socket, announceRequest, url);
+        }
+        else if(responseType(response) === 'announce'){
+            const announceResponse = parseAnnounceResponse(response);
+            callback(announceResponse.peers);
+        }
+    });
+};
+#+END_SRC
+
+** Exports
+#+BEGIN_SRC js :tangle yes
+export {
+    getPeers
+};
+#+END_SRC
+
+* Reference
+** getPeers
+Get url and create udp socket; send connection request with udpSend();
+On receiving message, check the type with responseType() and handle it accordingly;
+If the message type is connect, then the connection response is parsed with parseConnectionResponse(), the request is built with buildAnnounceRequest(), and the message request is sent with udpSend();
+If the message type is announce, then the response is parsed with parseAnnounceResponse(), and the callback function is called
