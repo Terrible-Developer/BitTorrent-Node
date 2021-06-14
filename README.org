@@ -2,3 +2,6 @@
 
 * BitTorrent client
 Not much to say for now, it's supposed to be (eventually, at least) a simple and efficient bittorrent client. This readme will be updated when there's more than just a .torrent and node files.
+
+* Org
+I've been using this project to try out literate programming with org mode in emacs. That means that, most of the time, I write my code in the org files, and try to comment and document anything on them; which leaves the actual source files without any comments. I recommend reading through the .org files instead of the actual source files if you're looking for any explanations or help.
