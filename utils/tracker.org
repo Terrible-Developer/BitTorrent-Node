@@ -3,7 +3,7 @@
 #+PROPERTY: :tangle "./tracker.js"
 
 * Explanation
-?
+There is no explanation so far, this is just a placeholder
 
 * Code
 ** Imports
@@ -11,35 +11,67 @@
 import dgram from 'dgram';
 import { Buffer } from 'buffer';
 import { urlParse } from 'url';
+import crypto from 'crypto';
 #+END_SRC
 
 ** Methods
+*** udpSend
 #+BEGIN_SRC js :tangle yes
 const udpSend = (torrent, message, rawUrl, callback) => {
     const url = urlParse(rawUrl);
     socket.send(message, 0, message.length, url.port, url.host, callback);
 };
-
+#+END_SRC
+*** responseType
+#+BEGIN_SRC js :tangle yes
 const responseType = response => {
 
 };
+#+END_SRC
 
+*** buildConnectionRequest
+#+BEGIN_SRC js :tangle yes
 const buildConnectionRequest = () => {
+    //1. buffer allocation
+    const buf = Buffer.alloc(16);
 
+    //2. connection_id
+    buf.writeUInt32BE(0x417, 0);
+    buf.writeUInt32BE(0x27101980, 4);
+
+    //3. action type
+    buf.writeUInt32BE(0, 8);
+
+    //4. transaction_id
+    crypto.randomBytes(4).copy(buf, 12);
+
+    return buf;
 };
+#+END_SRC
 
+*** parseConnectionResponse
+#+BEGIN_SRC js :tangle yes
 const parseConnectionResponse = response => {
 
 };
+#+END_SRC
 
+*** buildAnnounceRequest
+#+BEGIN_SRC js :tangle yes
 const buildAnnounceRequest = connectionId => {
 
 };
+#+END_SRC
 
+*** parseAnnounceResponse
+#+BEGIN_SRC js :tangle yes
 const parseAnnounceResponse = response => {
 
 };
+#+END_SRC
 
+*** getPeers
+#+BEGIN_SRC js :tangle yes
 const getPeers = (torrent, callback) => {
     const url = urlParse(torrent.announce.toString("utf8"));
     const socket = dgram.createSocket('udp4');
@@ -72,4 +104,18 @@ export {
 Get url and create udp socket; send connection request with udpSend();
 On receiving message, check the type with responseType() and handle it accordingly;
 If the message type is connect, then the connection response is parsed with parseConnectionResponse(), the request is built with buildAnnounceRequest(), and the message request is sent with udpSend();
-If the message type is announce, then the response is parsed with parseAnnounceResponse(), and the callback function is called
+If the message type is announce, then the response is parsed with parseAnnounceResponse(), and the callback function is called.
+
+** buildConnectionRequest
+The requests need to be buffers with specific values in certain positions (for more info, see http://www.bittorrent.org/beps/bep_0015.html).
+The buffer's first 8 bits (from position 0 to position 7) are a 64-bit integer with the value of 0x41727101980;
+the next 4 bits (from position 8 to 11) must be an 32-bit integer describing the action (in this case, connect, the value is 0);
+then, the final 4 bits (from position 12 to 16) form the transaction id, a 32-bit integer with whatever random value the id will be.
+*** 1. buffer allocation
+Allocating the 16-bit buffer, the size of the message.
+*** 2. connection_id
+Creating the connection_id with the value stated by the documentation (0x41727101980). It must be created as two separate 32-bit integers because node doesn't support 64-bit integers.
+*** 3. action type
+Passing the action type to the buffer (0 in this case, for connect)
+*** 4. transaction_id
+Since this needs to be a random value, the crypto module can be used. After importing it, and after passing all the other values to the buffer, the random value can be generated with the randomBytes method, specifyng the number of bytes it should return; And then, with the copy method, it is copied to the message buffer, with the offset of 12, setting the starting position

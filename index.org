@@ -7,25 +7,19 @@
 
 * Code
 ** Imports
-fs to read and bencode to decode the .torrent file; dgram to handle udp, Buffer to handle the buffers (obviously) and urlParse to... parse urls
+fs to read and bencode to decode the .torrent file; getPeers function from tracker file to handle the torrent data
 #+BEGIN_SRC js :tangle yes
 import fs from 'fs';
 import bencode from 'bencode';
+import { getPeers } from './utils/tracker.js';
 #+END_SRC
 
-** Torrent decoding, reading, and import configs
-readFileSync gets the content of the torrent file, and bencode decodes it to an usable object.
-urlParse gets the announce url (Might be a problem later, some torrents may not have the announce property, will have to think about that one) to make it easier accessing parts like the protocol, port, etc;
-dgram creates the udp socket, upd4 to make it a regular ipv4 address, but udp6 can also be used for ipv6;
-ths socket, that's kinda annoying. first, the send method sends messages, yes. the first arg is the message, which must be a buffer (or at least it's better if it is, not sure if it's necessary);
-the second and third args are the buffer parts to send: first is the offset (the starting point), then the lenght from that offset.
-in this case, the offset is zero (so, the start of the buffer), and the lenght is the entire buffer lenght, which means that the entire buffer will be sent.
-the 'on' method is a basic reactionary method, when a message is sent from this socket, then execute the callback function.
+** Torrent handling
+*Most of the logic regarding the torrent has been moved to utils/tracker.js
+Decodes the torrent, calls getPeers
 #+BEGIN_SRC js :tangle yes
 const torrent = bencode.decode(fs.readFileSync('endeavouros.iso.torrent'));
-//const myMsg = Buffer.from('this is a message', 'utf8');
-//socket.send(myMsg, 0, , msg.length, url.port, url.host, () => {});
-//socket.on('message', msg => {
-//    console.log(`the message was ${msg}`);
-//});
+getPeers(torrent, peers => {
+    console.log(`Peer list: ${peers}`);
+});
 #+END_SRC

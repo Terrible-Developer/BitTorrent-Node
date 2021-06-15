@@ -1,6 +1,7 @@
 import dgram from 'dgram';
 import { Buffer } from 'buffer';
 import { urlParse } from 'url';
+import crypto from 'crypto';
 
 const udpSend = (torrent, message, rawUrl, callback) => {
     const url = urlParse(rawUrl);
@@ -12,7 +13,20 @@ const responseType = response => {
 };
 
 const buildConnectionRequest = () => {
+    //1. buffer allocation
+    const buf = Buffer.alloc(16);
 
+    //2. connection_id
+    buf.writeUInt32BE(0x417, 0);
+    buf.writeUInt32BE(0x27101980, 4);
+
+    //3. action type
+    buf.writeUInt32BE(0, 8);
+
+    //4. transaction_id
+    crypto.randomBytes(4).copy(buf, 12);
+
+    return buf;
 };
 
 const parseConnectionResponse = response => {
