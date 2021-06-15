@@ -5,3 +5,7 @@ Not much to say for now, it's supposed to be (eventually, at least) a simple and
 
 * Org
 I've been using this project to try out literate programming with org mode in emacs. That means that, most of the time, I write my code in the org files, and try to comment and document anything on them; which leaves the actual source files without any comments. I recommend reading through the .org files instead of the actual source files if you're looking for any explanations or help.
+
+* Notes
+** Torrent compatibility
+As of whichever commit this part gets added, this program only works with torrents that have an announce property. To be completely honest, I don't know if there are standards or good practices to a torrent file, I'll have to learn about it at some point, but for now, this is all the program can do. The best example of it is the archiso that I still haven't taken out of the repo: it doesn't have an announce property, so the program would crash when trying to use it. I've started using the endeavouros iso for now instead (yes, I like arch, and also use it bwt), but will try to find a way of reading any (common) torrent.

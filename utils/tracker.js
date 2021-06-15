@@ -2,6 +2,8 @@ import dgram from 'dgram';
 import { Buffer } from 'buffer';
 import { urlParse } from 'url';
 import crypto from 'crypto';
+import { genInfoHash, getTorrentSize } from './torrent-handler.js';
+import { genPeerId } from './generic-utils.js';
 
 const udpSend = (torrent, message, rawUrl, callback) => {
     const url = urlParse(rawUrl);
@@ -37,8 +39,50 @@ const parseConnectionResponse = response => {
     };
 };
 
-const buildAnnounceRequest = connectionId => {
+const buildAnnounceRequest = (connectionId, torrent, port = 6881) => {
+    //1. allocate buffer
+    const buf = Buffer.allocateUnsafe(98);
 
+    //2. connection_id
+    connectionId.copy(buf, 0);
+
+    //3. action
+    buf.writeUInt32BE(1, 8);
+
+    //4. transaction_id
+    crypto.randomBytes(4).copy(buf, 12);
+
+    //5. info hash
+    genInfoHash(torrent).copy(buf, 16);
+
+    //6. peer id
+    genPeerId().copy(buf, 36);
+
+    //7. downloaded
+    Buffer.alloc(8).copy(buf, 56);
+
+    //8. left
+    getTorrentSize(torrent).copy(buf, 64);
+
+    //9. uploaded
+    Buffer.alloc(8).copy(buf, 72);
+
+    //10. event
+    buf.writeUInt32BE(0, 80);
+
+    //11. ip address
+    buf.writeUInt32BE(0, 80);
+
+    //12. key
+    crypto.randomBytes(4).copy(buf, 88);
+
+    //13. num_want
+    buf.writeUInt32BE(-1, 92);
+
+    //14. port
+    buf.writeUInt32BE(port, 96);
+
+    return buf;
 };
 
 const parseAnnounceResponse = response => {

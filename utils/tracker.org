@@ -12,6 +12,8 @@ import dgram from 'dgram';
 import { Buffer } from 'buffer';
 import { urlParse } from 'url';
 import crypto from 'crypto';
+import { genInfoHash, getTorrentSize } from './torrent-handler.js';
+import { genPeerId } from './generic-utils.js';
 #+END_SRC
 
 ** Methods
@@ -67,8 +69,50 @@ const parseConnectionResponse = response => {
 *** buildAnnounceRequest
 Builds the announce request
 #+BEGIN_SRC js :tangle yes
-const buildAnnounceRequest = connectionId => {
+const buildAnnounceRequest = (connectionId, torrent, port = 6881) => {
+    //1. allocate buffer
+    const buf = Buffer.allocateUnsafe(98);
 
+    //2. connection_id
+    connectionId.copy(buf, 0);
+
+    //3. action
+    buf.writeUInt32BE(1, 8);
+
+    //4. transaction_id
+    crypto.randomBytes(4).copy(buf, 12);
+
+    //5. info hash
+    genInfoHash(torrent).copy(buf, 16);
+
+    //6. peer id
+    genPeerId().copy(buf, 36);
+
+    //7. downloaded
+    Buffer.alloc(8).copy(buf, 56);
+
+    //8. left
+    getTorrentSize(torrent).copy(buf, 64);
+
+    //9. uploaded
+    Buffer.alloc(8).copy(buf, 72);
+
+    //10. event
+    buf.writeUInt32BE(0, 80);
+
+    //11. ip address
+    buf.writeUInt32BE(0, 80);
+
+    //12. key
+    crypto.randomBytes(4).copy(buf, 88);
+
+    //13. num_want
+    buf.writeUInt32BE(-1, 92);
+
+    //14. port
+    buf.writeUInt32BE(port, 96);
+
+    return buf;
 };
 #+END_SRC
 
@@ -127,8 +171,8 @@ the next 4 bits (from position 8 to 11) must be an 32-bit integer describing the
 then, the final 4 bits (from position 12 to 16) form the transaction id, a 32-bit integer with whatever random value the id will be.
 #+BEGIN_SRC dot
 Offset  Size            Name            Value
-0       64-bit integer  protocol_id     0x41727101980 // magic constant
-8       32-bit integer  action          0 // connect
+0       64-bit integer  protocol_id     0x41727101980
+8       32-bit integer  action          0
 12      32-bit integer  transaction_id
 16
 #+END_SRC
@@ -152,4 +196,27 @@ Offset  Size            Name            Value
 4       32-bit integer  transaction_id
 8       64-bit integer  connection_id
 16
+#+END_SRC
+
+** buildAnnounceRequest
+This is the announce request
+It follows the same idea of the connection request, but it has several more values. It is 98 bytes long. It would be too long to explain every part individually, so just check the graph below.
+
+Note: this is the announce request for ipv4 addresses. For ipv6, check the documentation linked in the Torrent Requests section.
+#+BEGIN_SRC dot
+Offset  Size    Name    Value
+0       64-bit integer  connection_id
+8       32-bit integer  action          1 // announce
+12      32-bit integer  transaction_id
+16      20-byte string  info_hash
+36      20-byte string  peer_id
+56      64-bit integer  downloaded
+64      64-bit integer  left
+72      64-bit integer  uploaded
+80      32-bit integer  event           0 // 0: none; 1: completed; 2: started; 3: stopped
+84      32-bit integer  IP address      0 // default
+88      32-bit integer  key
+92      32-bit integer  num_want        -1 // default
+96      16-bit integer  port
+98
 #+END_SRC

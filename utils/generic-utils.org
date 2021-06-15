@@ -1,0 +1,31 @@
+#+TITLE: Generic Utils
+#+DESCRIPTION: Generic utilities that would not warrant a separate file
+#+PROPERTY: :tangle "./generic-utils.js"
+
+* Code
+** Imports
+#+BEGIN_SRC js :tangle yes
+import crypto from 'crypto';
+#+END_SRC
+
+** Global file configs
+#+BEGIN_SRC js :tangle yes
+let id = null;
+#+END_SRC
+
+** Methods
+*** genPeerId
+#+BEGIN_SRC js :tangle yes
+const genPeerId = () => {
+
+};
+#+END_SRC
+
+** Exports
+#+BEGIN_SRC js :tangle yes
+export {
+    genPeerId
+}
+#+END_SRC
+
+* Reference

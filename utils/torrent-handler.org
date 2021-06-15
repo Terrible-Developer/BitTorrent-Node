@@ -1,0 +1,30 @@
+#+TITLE: Torrent Handler
+#+DESCRIPTION: Methods related to handling the actual torrent file and its contents
+#+PROPERTY: :tangle "./torrent-handler.js"
+
+* Code
+** Imports
+#+BEGIN_SRC js :tangle yes
+import fs from 'fs';
+import bencode from 'bencode';
+#+END_SRC
+
+** Methods
+*** openTorrent
+#+BEGIN_SRC js :tangle yes
+const openTorrent = torrentPath => {
+    return bencode.decode(fs.readFileSync(torrentPath));
+};
+#+END_SRC
+*** genInfoHash
+#+BEGIN_SRC js :tangle yes
+const getInfoHash = torrent => {
+
+};
+#+END_SRC
+*** getTorrentSize
+#+BEGIN_SRC js :tangle yes
+const getTorrentSize = torrent => {
+
+};
+#+END_SRC

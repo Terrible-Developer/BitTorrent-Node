@@ -9,8 +9,7 @@
 ** Imports
 fs to read and bencode to decode the .torrent file; getPeers function from tracker file to handle the torrent data
 #+BEGIN_SRC js :tangle yes
-import fs from 'fs';
-import bencode from 'bencode';
+import { openTorrent } from './utils/torrent-handler.js';
 import { getPeers } from './utils/tracker.js';
 #+END_SRC
 
@@ -18,7 +17,7 @@ import { getPeers } from './utils/tracker.js';
 *Most of the logic regarding the torrent has been moved to utils/tracker.js
 Decodes the torrent, calls getPeers
 #+BEGIN_SRC js :tangle yes
-const torrent = bencode.decode(fs.readFileSync('endeavouros.iso.torrent'));
+const torrent = openTorrent('endeavouros.iso.torrent'));
 getPeers(torrent, peers => {
     console.log(`Peer list: ${peers}`);
 });
