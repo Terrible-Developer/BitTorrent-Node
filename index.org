@@ -1,5 +1,5 @@
 #+TITLE: Index
-#+DESCRIPTION Main file
+#+DESCRIPTION: Main file
 #+PROPERTY: :tangle "./index.js"
 
 * Intro
