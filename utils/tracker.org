@@ -16,6 +16,7 @@ import crypto from 'crypto';
 
 ** Methods
 *** udpSend
+Sends a message through the udp socket
 #+BEGIN_SRC js :tangle yes
 const udpSend = (torrent, message, rawUrl, callback) => {
     const url = urlParse(rawUrl);
@@ -23,6 +24,7 @@ const udpSend = (torrent, message, rawUrl, callback) => {
 };
 #+END_SRC
 *** responseType
+Interprets the response type
 #+BEGIN_SRC js :tangle yes
 const responseType = response => {
 
@@ -30,6 +32,7 @@ const responseType = response => {
 #+END_SRC
 
 *** buildConnectionRequest
+Builds the connection request
 #+BEGIN_SRC js :tangle yes
 const buildConnectionRequest = () => {
     //1. buffer allocation
@@ -50,13 +53,19 @@ const buildConnectionRequest = () => {
 #+END_SRC
 
 *** parseConnectionResponse
+Parses the response to the connectionRequest
 #+BEGIN_SRC js :tangle yes
 const parseConnectionResponse = response => {
-
+    return {
+        action: response.readUInt32BE(0),
+        transactionId: response.readUInt32BE(4),
+        connectionId: response.slice(8)
+    };
 };
 #+END_SRC
 
 *** buildAnnounceRequest
+Builds the announce request
 #+BEGIN_SRC js :tangle yes
 const buildAnnounceRequest = connectionId => {
 
@@ -64,6 +73,7 @@ const buildAnnounceRequest = connectionId => {
 #+END_SRC
 
 *** parseAnnounceResponse
+Parses the response to the announce request
 #+BEGIN_SRC js :tangle yes
 const parseAnnounceResponse = response => {
 
@@ -71,6 +81,7 @@ const parseAnnounceResponse = response => {
 #+END_SRC
 
 *** getPeers
+Get a list of the torrent peers
 #+BEGIN_SRC js :tangle yes
 const getPeers = (torrent, callback) => {
     const url = urlParse(torrent.announce.toString("utf8"));
@@ -100,6 +111,9 @@ export {
 #+END_SRC
 
 * Reference
+** Torrent Requests
+The requests need to be buffers with specific values in certain positions (for more info, see http://www.bittorrent.org/beps/bep_0015.html).
+
 ** getPeers
 Get url and create udp socket; send connection request with udpSend();
 On receiving message, check the type with responseType() and handle it accordingly;
@@ -107,10 +121,17 @@ If the message type is connect, then the connection response is parsed with pars
 If the message type is announce, then the response is parsed with parseAnnounceResponse(), and the callback function is called.
 
 ** buildConnectionRequest
-The requests need to be buffers with specific values in certain positions (for more info, see http://www.bittorrent.org/beps/bep_0015.html).
+This is the connect request
 The buffer's first 8 bits (from position 0 to position 7) are a 64-bit integer with the value of 0x41727101980;
 the next 4 bits (from position 8 to 11) must be an 32-bit integer describing the action (in this case, connect, the value is 0);
 then, the final 4 bits (from position 12 to 16) form the transaction id, a 32-bit integer with whatever random value the id will be.
+#+BEGIN_SRC dot
+Offset  Size            Name            Value
+0       64-bit integer  protocol_id     0x41727101980 // magic constant
+8       32-bit integer  action          0 // connect
+12      32-bit integer  transaction_id
+16
+#+END_SRC
 *** 1. buffer allocation
 Allocating the 16-bit buffer, the size of the message.
 *** 2. connection_id
@@ -119,3 +140,16 @@ Creating the connection_id with the value stated by the documentation (0x4172710
 Passing the action type to the buffer (0 in this case, for connect)
 *** 4. transaction_id
 Since this needs to be a random value, the crypto module can be used. After importing it, and after passing all the other values to the buffer, the random value can be generated with the randomBytes method, specifyng the number of bytes it should return; And then, with the copy method, it is copied to the message buffer, with the offset of 12, setting the starting position
+
+** parseConnectionResponse
+Parsing the response to the connect request
+Much simpler than creating the request itself, the response is received, and then every part is separated into a property of an object, which is returned.
+The response structure is similar to the request (see below), but the action is the first value, then the transaction_id, and then the connection_id.
+To separate them easily, the first 4 bytes are read as the action (starting at 0), the following four are read as the transaction_id, and for last, since the connection_id is a 64-bit integer, it's easier to just splice the buffer instead of reading it as two halves and trying to join them afterwards.
+#+BEGIN_SRC dot
+Offset  Size            Name            Value
+0       32-bit integer  action          0 // connect
+4       32-bit integer  transaction_id
+8       64-bit integer  connection_id
+16
+#+END_SRC

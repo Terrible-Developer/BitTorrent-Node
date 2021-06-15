@@ -30,7 +30,11 @@ const buildConnectionRequest = () => {
 };
 
 const parseConnectionResponse = response => {
-
+    return {
+        action: response.readUInt32BE(0),
+        transactionId: response.readUInt32BE(4),
+        connectionId: response.slice(8)
+    };
 };
 
 const buildAnnounceRequest = connectionId => {
