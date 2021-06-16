@@ -17,7 +17,11 @@ let id = null;
 *** genPeerId
 #+BEGIN_SRC js :tangle yes
 const genPeerId = () => {
-
+    if(!id){
+        id = crypto.randomBytes(20);
+        Buffer.from('-VT0001-').copy(id, 0);
+    }
+    return id;
 };
 #+END_SRC
 
@@ -29,3 +33,6 @@ export {
 #+END_SRC
 
 * Reference
+** genPeerId
+The peer id defines an unique peer (captain obvious here). For generating it, it just needs to be a random 20-byte buffer, but it seems like there are some convetions on how to create it (which can be seen here: http://www.bittorrent.org/beps/bep_0020.html).
+I used et001 because *Victor's Torrent* and version 0001 because I have no idea how one would go about versioning this.

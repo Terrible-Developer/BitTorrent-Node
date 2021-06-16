@@ -55,7 +55,7 @@ const buildAnnounceRequest = (connectionId, torrent, port = 6881) => {
     //5. info hash
     genInfoHash(torrent).copy(buf, 16);
 
-    //6. peer id
+    //6. peer_id
     genPeerId().copy(buf, 36);
 
     //7. downloaded
@@ -77,7 +77,7 @@ const buildAnnounceRequest = (connectionId, torrent, port = 6881) => {
     crypto.randomBytes(4).copy(buf, 88);
 
     //13. num_want
-    buf.writeUInt32BE(-1, 92);
+    buf.writeInt32BE(-1, 92);
 
     //14. port
     buf.writeUInt32BE(port, 96);

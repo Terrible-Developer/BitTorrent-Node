@@ -85,7 +85,7 @@ const buildAnnounceRequest = (connectionId, torrent, port = 6881) => {
     //5. info hash
     genInfoHash(torrent).copy(buf, 16);
 
-    //6. peer id
+    //6. peer_id
     genPeerId().copy(buf, 36);
 
     //7. downloaded
@@ -107,7 +107,7 @@ const buildAnnounceRequest = (connectionId, torrent, port = 6881) => {
     crypto.randomBytes(4).copy(buf, 88);
 
     //13. num_want
-    buf.writeUInt32BE(-1, 92);
+    buf.writeInt32BE(-1, 92);
 
     //14. port
     buf.writeUInt32BE(port, 96);
@@ -153,6 +153,7 @@ export {
     getPeers
 };
 #+END_SRC
+
 
 * Reference
 ** Torrent Requests
@@ -220,3 +221,48 @@ Offset  Size    Name    Value
 96      16-bit integer  port
 98
 #+END_SRC
+
+*** 1. allocate the buffer
+Simple, like in the connect request. Just allocating the buffer, but instead of the 16 bytes the connectRequest used, this one uses 98 bytes.
+Also, this one is being allocated with Buffer.allocUnsafe, which uses an pre-allocated internal node buffer pool, making it faster, but not guaranteeing zeroes in all values.
+Being honest, I'm not sure why I'm using it here, just saw a guy using it online and decided to give it a try. Really don't know if using the regullar Buffer.alloc will be too much of a hit in performance for such a large(r) buffer, or if it's size makes it inefficient, but hey, if it works, it works.
+
+*** 2. connection_id
+The connection id received from parsing the connect request response.
+
+*** 3. action
+Again, just like in the connection request, this value indicates what type of request this is, or what action is to be executed. Here, the value should be 1, which is announce
+
+*** 4. transaction_id
+The transaction id works the same as the connection id: a randomly generated id that identifies that transaction.
+
+*** 5. info_hash
+The info hash is a hashed version of all the info on the torrent. Looks very complicated, ends up being very simple (to understand, of course. I just know I'm in for a ride when I get to the implementation of handling this part).
+*Not implemented yet, will update this when it is.*
+
+*** 6. peer_id
+The peer id is an id you assign to the peer, so, like the other ids in this request, self-explanatory.
+
+*** 7. downloaded
+As far as I understand, it's the amount already downloaded.
+
+*** 8. left
+Reflecting downloaded, this one is about how much is left to download (this one seems like it is also going to be a pain to implement, but who knows?).
+
+*** 9. uploaded
+Just wingin' it here, but my guess would be how much has been uploaded, just like downloaded. But not sure, it's kinda hard to search info about these individual properties (even the official docs I've linked before don't seem to individually explain these).
+
+*** 10. event
+Warns about an event. The types of events are listed in the announce request graph above this section.
+
+*** 11. ip address
+It's becoming an common theme with these last ones that I just guess what they are (Still writing everything, haven't had a chance to actually see and use some of these methods yet), but it looks like this one is just the IP of (probably) the receiver.
+
+*** 12. key
+A key, not sure exactly what for, but a key nonetheless. It seems like it can just be a random 4-byte value.
+
+*** 13. num_want
+The number of peers the client wants to receive. Assuming here that -1 is something akin to unlimited.
+
+*** 14. port
+The port the client is listening. Apparently, BitTorrent standardized using ports between 6881-6889, so I've got 6881 as the default for the method arg, but it can be overloaded.
