@@ -154,7 +154,6 @@ export {
 };
 #+END_SRC
 
-
 * Reference
 ** Torrent Requests
 The requests need to be buffers with specific values in certain positions (for more info, see http://www.bittorrent.org/beps/bep_0015.html).
@@ -167,9 +166,9 @@ If the message type is announce, then the response is parsed with parseAnnounceR
 
 ** buildConnectionRequest
 This is the connect request
-The buffer's first 8 bits (from position 0 to position 7) are a 64-bit integer with the value of 0x41727101980;
-the next 4 bits (from position 8 to 11) must be an 32-bit integer describing the action (in this case, connect, the value is 0);
-then, the final 4 bits (from position 12 to 16) form the transaction id, a 32-bit integer with whatever random value the id will be.
+The buffer's first 8 bytes (from position 0 to position 7) are a 64-bit integer with the value of 0x41727101980;
+the next 4 bytes (from position 8 to 11) must be an 32-bit integer describing the action (in this case, connect, the value is 0);
+then, the final 4 bytes (from position 12 to 16) form the transaction id, a 32-bit integer with whatever random value the id will be.
 #+BEGIN_SRC dot
 Offset  Size            Name            Value
 0       64-bit integer  protocol_id     0x41727101980
