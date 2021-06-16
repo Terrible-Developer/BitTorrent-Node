@@ -25,10 +25,22 @@ const genPeerId = () => {
 };
 #+END_SRC
 
+*** getPeerGroup
+#+BEGIN_SRC js :tangle yes
+const getPeerGroup = (iterable, groupSize) => {
+    let groups = [];
+    for (var i = 0; i < iterable.length; i += groupSize){
+        groups.push(iterable.slice(i, i + groupSize));
+    }
+    return groups;
+}
+#+END_SRC
+
 ** Exports
 #+BEGIN_SRC js :tangle yes
 export {
-    genPeerId
+    genPeerId,
+    getPeerGroup
 }
 #+END_SRC
 
@@ -36,3 +48,6 @@ export {
 ** genPeerId
 The peer id defines an unique peer (captain obvious here). For generating it, it just needs to be a random 20-byte buffer, but it seems like there are some convetions on how to create it (which can be seen here: http://www.bittorrent.org/beps/bep_0020.html).
 I used et001 because *Victor's Torrent* and version 0001 because I have no idea how one would go about versioning this.
+** getPeerGroup
+Gets the number of peers.
+Receives the actual iterable (the bytes in the announce response that contain the information) and the size of each group/peer (which is always 6). Then, separates each peer by slicing with the current index, and adds it to an array, which is returned by the method.

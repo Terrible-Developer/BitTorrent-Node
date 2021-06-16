@@ -3,7 +3,7 @@ import { Buffer } from 'buffer';
 import { urlParse } from 'url';
 import crypto from 'crypto';
 import { genInfoHash, getTorrentSize } from './torrent-handler.js';
-import { genPeerId } from './generic-utils.js';
+import { genPeerId, getPeerGroup } from './generic-utils.js';
 
 const udpSend = (torrent, message, rawUrl, callback) => {
     const url = urlParse(rawUrl);
@@ -86,7 +86,18 @@ const buildAnnounceRequest = (connectionId, torrent, port = 6881) => {
 };
 
 const parseAnnounceResponse = response => {
-
+    return {
+        action: response.readUInt32BE(0),
+        transaction_id: response.readUInt32BE(4),
+        leechers: response.readUInt32BE(8),
+        seeders: readUInt32BE(12),
+        peers: getPeerGroup(response.slice(20), 6).map(address => {
+            return {
+                ip: address.slice(0, 4).join('.'),
+                port: address.readUInt16BE(4)
+            };
+        })
+    };
 };
 
 const getPeers = (torrent, callback) => {

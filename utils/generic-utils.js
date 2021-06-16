@@ -10,6 +10,15 @@ const genPeerId = () => {
     return id;
 };
 
+const getPeerGroup = (iterable, groupSize) => {
+    let groups = [];
+    for (var i = 0; i < iterable.length; i += groupSize){
+        groups.push(iterable.slice(i, i + groupSize));
+    }
+    return groups;
+}
+
 export {
-    genPeerId
+    genPeerId,
+    getPeerGroup
 }
