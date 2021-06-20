@@ -4,7 +4,6 @@
 
 * Explanation
 There is no explanation so far, this is just a placeholder
-
 * Code
 ** Imports
 #+BEGIN_SRC js :tangle yes

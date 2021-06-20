@@ -7,6 +7,8 @@
 #+BEGIN_SRC js :tangle yes
 import fs from 'fs';
 import bencode from 'bencode';
+import crypto from 'crypto';
+import bignum from 'bignum';
 #+END_SRC
 
 ** Methods
@@ -19,12 +21,33 @@ const openTorrent = torrentPath => {
 *** genInfoHash
 #+BEGIN_SRC js :tangle yes
 const getInfoHash = torrent => {
-
+    const info = bencode.encode(torrent.info);
+    return crypto.createHash('sha1').update(info).digest();
 };
 #+END_SRC
 *** getTorrentSize
 #+BEGIN_SRC js :tangle yes
 const getTorrentSize = torrent => {
+    const size = torrent.info.files ? torrent.info.files.map(file => file.length).reduce((a, b) => a + b) : torrent.info.length;
 
+    return bignum.toBuffer(size, { size: 8 });
 };
 #+END_SRC
+
+** Exports
+#+BEGIN_SRC js :tangle yes
+export {
+    getInfoHash,
+    getTorrentSize,
+    openTorrent
+};
+#+END_SRC
+
+* Reference
+** openTorrent
+The basic decoding of the .torrent file. Using the bencode module, and the decode method, we get the information of the file in a usable format.
+** getInfoHash
+Torrents usually use an infohash, a hashed value of all the torrent data. This method is re-enconding part of the torrent, so maybe it could be refactored to take the original torrent, but I'm currently not sure if it would be possible to pick what part to use doing it like that.
+After encoding the info section of the torrent, I hash it with the crypto module (using the sha1 algorithm, no idea if this is a convetion or if it only works with this algorithm, will update this section if I find out), and return it.
+** getTorrentSize
+This method is an helper to calculate the left property of the announce request. The left property defines what's left to download from the torrent (this is explained in the tracker.org section about the announce, too). It checks either the length property itself, or, if the torrent has more than one file (as it is usually the case), the info.files property, which contains the remaining files.
