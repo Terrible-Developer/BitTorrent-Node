@@ -28,7 +28,10 @@ const udpSend = (torrent, message, rawUrl, callback) => {
 Interprets the response type
 #+BEGIN_SRC js :tangle yes
 const responseType = response => {
-
+    const action = response.readUInt32BE(0);
+    if(action === 0) return 'connect';
+    if(action === 1) return 'announce';
+    else return 'failure';
 };
 #+END_SRC
 
@@ -174,6 +177,8 @@ On receiving message, check the type with responseType() and handle it according
 If the message type is connect, then the connection response is parsed with parseConnectionResponse(), the request is built with buildAnnounceRequest(), and the message request is sent with udpSend();
 If the message type is announce, then the response is parsed with parseAnnounceResponse(), and the callback function is called.
 
+** responseType
+Gets the response and reads the type.
 ** buildConnectionRequest
 This is the connect request
 The buffer's first 8 bytes (from position 0 to position 7) are a 64-bit integer with the value of 0x41727101980;
