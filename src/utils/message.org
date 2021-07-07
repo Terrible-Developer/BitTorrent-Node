@@ -1,0 +1,233 @@
+#+TITLE: Message
+#+DESCRIPTION: File related to the message types between peers
+#+PROPERTY: :tangle "./message.js"
+
+* Code
+** Imports
+#+begin_src js :tangle yes
+import { Buffer } from 'buffer';
+import { getInfoHash } from './torrent-handler.js';
+import { genPeerId } from './generic-utils.js';
+#+end_src
+** Methods
+*** buildHandshake
+#+begin_src js :tangle yes
+const buildHandshake = torrent => {
+    const buffer =  Buffer.alloc(68);
+    //pstrlen
+    buffer.writeUInt8(19, 0);
+    //pstr
+    buffer.write('Bittorrent protocol', 1);
+    //reserved
+    buffer.writeUInt32BE(0, 20);
+    buffer.writeUInt32BE(0, 24);
+    //info hash
+    getInfoHash(torrent).copy(buffer, 28);
+    //peer_Id
+    buffer.write(genPeerId());
+
+    return buffer;
+};
+#+end_src
+
+*** buildKeepAlive
+#+begin_src js :tangle yes
+const buildKeepAlive = () => Buffer.alloc(4);
+#+end_src
+*** buildChoke
+#+begin_src js :tangle yes
+const buildChoke = () => {
+    const buffer = Buffer.alloc(5);
+    //length
+    buffer.writeUInt32BE(1, 0);
+    //id
+    buffer.writeUInt8(0, 4);
+
+    return buffer;
+};
+#+end_src
+*** buildUnchoke
+#+begin_src js :tangle yes
+const buildUnchoke = () => {
+    const buffer = Buffer.alloc(5);
+    //length
+    buffer.writeUInt32BE(1, 0);
+    //id
+    buffer.writeUInt8(1, 4);
+
+    return buffer;
+};
+#+end_src
+*** buildInterested
+#+begin_src js :tangle yes
+const buildInterested = () => {
+    const buffer = Buffer.alloc(5);
+    //length
+    buffer.writeUInt32BE(1, 0);
+    //id
+    buffer.writeUInt8(2, 4);
+
+    return buffer;
+};
+#+end_src
+*** buildUninterested
+#+begin_src js :tangle yes
+const buildUninterested = () => {
+    const buffer = Buffer.alloc(5);
+    //length
+    buffer.writeUInt32BE(1, 0);
+    //id
+    buffer.writeUInt8(3, 4); //the 3 is the uninterested id
+
+    return buffer;
+};
+#+end_src
+*** buildHave
+#+begin_src js :tangle yes
+const buildHave = payload => {
+    const buffer = Buffer.alloc(9);
+    //length
+    buffer.writeUInt32BE(5, 0);
+    //id
+    buffer.writeUInt8(4, 4); //4 is the have id
+    //piece index
+    buffer.writeUInt32BE(payload, 5);
+
+    return buffer;
+};
+#+end_src
+*** buildBitfield
+#+begin_src js :tangle yes
+const buildBitfield = (bitfield, payload) => {
+    const buffer.alloc(14);
+    //length
+    buffer.writeUInt32BE(payload.length + 1, 0);
+    //id
+    buffer.writeUInt8(5, 4);
+    //bitfield
+    bitfield.copy(buffer, 5);
+
+    return buffer;
+};
+#+end_src
+*** buildRequest
+#+begin_src js :tangle yes
+const buildRequest = payload => {
+    const buffer = Buffer.alloc(17);
+    //length
+    buffer.writeUInt23BE(13, 0);
+    //id
+    buffer.writeUInt8(6, 4);
+    //piece index
+    buffer.writeUInt32BE(payload.index, 5);
+    //begin
+    buffer.writeUInt32BE(payload.begin, 9);
+    //length
+    buffer.writeUInt32BE(payload.length, 13);
+
+    return buffer;
+};
+#+end_src
+*** buildPiece
+#+begin_src js :tangle yes
+const buildPiece = payload => {
+    const buffer = Buffer.alloc(payload.block.length + 13);
+    //length
+    buffer.writeUInt32BE(payload.block.length + 9, 0);
+    //id
+    buffer.writeUInt8(7, 4);
+    //piece index
+    buffer.writeUInt32BE(payload.index, 5);
+    //begin
+    buffer.writeUInt32BE(payload.begin, 9);
+    //block
+    payload.block.copy(buffer, 13);
+
+    return buffer;
+};
+#+end_src
+*** buildCancel
+#+begin_src js :tangle yes
+const buildCancel = payload => {
+    const buffer = Buffer.alloc(17);
+    //length
+    buffer.writeUInt32BE(13, 0);
+    //id
+    buffer.writeUInt8(8, 4);
+    //piece index
+    buffer.writeUInt32BE(payload.index, 5);
+    //begin
+    buffer.writeUInt32BE(payload.begin, 9);
+    //length
+    buffer.writeUInt32BE(payload.length, 13);
+
+    return buffer;
+};
+#+end_src
+*** buildPort
+#+begin_src js :tangle yes
+const buildPort = payload => {
+    const buffer = Buffer.alloc(7);
+    //length
+    buffer.writeUInt32BE(3, 0);
+    //id
+    buffer.writeUInt8(9, 4);
+    //listen-port
+    buffer.writeUInt16BE(payload, 5);
+
+    return buffer;
+};
+#+end_src
+* Reference
+** Handshake
+*** Explanation
+The initial message between peers. It contains some info about the sender, and a list of the files needed.
+If the receiver doesn't have the files, he will close the connection, but if he does, he will send back a [[#confirmationMessage][similar message]] for confirmation.
+The [[https://wiki.theory.org/index.php/BitTorrentSpecification#Handshake][specifications]] dictate that the handshake message should be a buffer that looks like the following:
+#+begin_src dot
+handshake: <pstrlen><pstr><reserved><info_hash><peer_id>
+#+end_src
+pstrlen is the length of <pstr>, as a raw byte;
+pstr is the identifier of the protocol, as a string;
+reserved are 8 reserved bytes (currently not used for anything, but are there in case some new feature will use them). Currently, they are left as all zeroes;
+info hash has already been explained before, but it's an hashed version of the info section of the torrent;
+peer_id is a 20-byte string that identifies that unique peer;
+In version 1.0 of the Bittorrent Protocol, apparently, pstrlen is 19, and pstr is "Bittorrent protocol";
+*** Code
+Allocate a 68-byte buffer;
+Assign the pstrlen value to the first byte (in this case, 19);
+Assign the actual pstr (protocol string) after (in this case, 'Bittorrent protocol');
+Assign the reserved bytes, fill bytes 20 to 27 with zeroes;
+Gets and assigns the infoHash of the current torrent;
+Gets and assigns the peer id;
+** Confirmation Message
+:PROPERTIES:
+:CUSTOM_ID: confirmationMessage
+:END:
+*** Explanation
+The message a receiver sends back after the initial handshake. It's main use is to tell the sender which pieces the receiver has. This happens through two fields: Have and Bitfield.
+**** Have
+This field indicates, through an index, that the peer has that piece.
+Ex: If the peer has pieces 1 and 3, he would send back two messages with the payload being 1 and 3 (the piece index), respectively.
+**** Bitfield
+Bitfield is basically the same as have, but instead of beign a single message indicating the piece index, it is a single string that shows all pieces, and the current have status (1 for have, 0 for not have).
+Ex: Taking the previous example, assume that the torrent has a total of 6 pieces, and that the peer has the pieces at index 1 and 3. In that case, the bitfield string/message would be the following:
+010100
+A 6-character string, formed by all zeroes except for indexes 1 and 3.
+**** Both
+It is possible to receive both have and bitfield messages. In that case, they should be combined to get the full list
+*DISCLAIMER*: For now, not sure how exactly it works when both messages are received, but my current guess would be to just check the length of the bitfield, and the indexes of the have messages, and declare the number of pieces by the highest number.
+*** Code
+
+** Connection Message
+Usually, the confirmation message will be the first message received from a peer. But there are other kinds of messages, related to what pieces one has and the other wants, and if they will share those pieces or not.
+Those are the choke/unchoke, and interested/not interested messages.
+*** Interested/Not Interested
+The interested message indicates that you want the pieces the peer has, and not interested that you don't want/need them.
+*** Choke/Unchoke
+The choke message indicates that the peer does not want to share with you; the unchoke is the opposite. The sender always starts choked and not interested, so the common course of action would be to send a interested message and receive the unchoke, then move on to [[#requestMessage][the request message]]. But it is also possible that the receiver does not want to share, and sends back another choke message. In that case, the connection to that peer should be dropped.
+** Request Message
+:PROPERTIES:
+:CUSTOM_ID: requestMessage
+:END:
+Message containing the index of the piece the sender wants. **Will re-write later**
