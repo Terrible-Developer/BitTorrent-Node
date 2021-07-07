@@ -1,0 +1,32 @@
+#+TITLE: Download
+#+DESCRIPTION: Methods related to downloading
+#+PROPERTY: :tangle "./download.js"
+
+* Code
+** Imports
+#+begin_src js :tangle yes
+import net from 'net';
+import { Buffer } from 'buffer';
+import { getPeers } from './tracker.js';
+#+end_src
+** Methods
+Info: [[download]]
+#+begin_src js :tangle yes
+const download = peer => {
+    const socket = net.Socket();
+    socket.on('error', console.log);
+    socket.connect(peer.port, peer.ip, () => {
+        //write message
+    });
+    socket.on('data', data => {
+        //handle response
+    });
+}
+#+end_src
+
+* Reference
+** download
+Defines the socket, and sets the actions on socket events.
+On error, logs the error message (might change in the future, testing for now).
+On connection, *not implemented yet*.
+On data reception, *not implemented yet*.

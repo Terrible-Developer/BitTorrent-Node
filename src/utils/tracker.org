@@ -26,6 +26,7 @@ const udpSend = (torrent, message, rawUrl, callback) => {
 #+END_SRC
 *** responseType
 Interprets the response type
+More info: #[[responseType]]
 #+BEGIN_SRC js :tangle yes
 const responseType = response => {
     const action = response.readUInt32BE(0);
@@ -37,6 +38,7 @@ const responseType = response => {
 
 *** buildConnectionRequest
 Builds the connection request
+More info: [[#connectReq]]
 #+BEGIN_SRC js :tangle yes
 const buildConnectionRequest = () => {
     //1. buffer allocation
@@ -58,6 +60,7 @@ const buildConnectionRequest = () => {
 
 *** parseConnectionResponse
 Parses the response to the connectionRequest
+More info: [[#connectRes]]
 #+BEGIN_SRC js :tangle yes
 const parseConnectionResponse = response => {
     return {
@@ -70,6 +73,7 @@ const parseConnectionResponse = response => {
 
 *** buildAnnounceRequest
 Builds the announce request
+More info: [[#announceReq]]
 #+BEGIN_SRC js :tangle yes
 const buildAnnounceRequest = (connectionId, torrent, port = 6881) => {
     //1. allocate buffer
@@ -120,6 +124,7 @@ const buildAnnounceRequest = (connectionId, torrent, port = 6881) => {
 
 *** parseAnnounceResponse
 Parses the response to the announce request
+More info: [[#announceRes]]
 #+BEGIN_SRC js :tangle yes
 const parseAnnounceResponse = response => {
     return {
@@ -139,6 +144,7 @@ const parseAnnounceResponse = response => {
 
 *** getPeers
 Get a list of the torrent peers
+More info: [[#getPeers]]
 #+BEGIN_SRC js :tangle yes
 const getPeers = (torrent, callback) => {
     const url = urlParse(torrent.announce.toString("utf8"));
@@ -172,14 +178,23 @@ export {
 The requests need to be buffers with specific values in certain positions (for more info, see http://www.bittorrent.org/beps/bep_0015.html).
 
 ** getPeers
+:PROPERTIES:
+:CUSTOM_ID: getPeers
+:END:
 Get url and create udp socket; send connection request with udpSend();
 On receiving message, check the type with responseType() and handle it accordingly;
 If the message type is connect, then the connection response is parsed with parseConnectionResponse(), the request is built with buildAnnounceRequest(), and the message request is sent with udpSend();
 If the message type is announce, then the response is parsed with parseAnnounceResponse(), and the callback function is called.
 
 ** responseType
+:PROPERTIES:
+:CUSTOM_ID: responseType
+:END:
 Gets the response and reads the type.
 ** buildConnectionRequest
+:PROPERTIES:
+:CUSTOM_ID: connectReq
+:END:
 This is the connect request
 The buffer's first 8 bytes (from position 0 to position 7) are a 64-bit integer with the value of 0x41727101980;
 the next 4 bytes (from position 8 to 11) must be an 32-bit integer describing the action (in this case, connect, the value is 0);
@@ -201,6 +216,9 @@ Passing the action type to the buffer (0 in this case, for connect)
 Since this needs to be a random value, the crypto module can be used. After importing it, and after passing all the other values to the buffer, the random value can be generated with the randomBytes method, specifyng the number of bytes it should return; And then, with the copy method, it is copied to the message buffer, with the offset of 12, setting the starting position
 
 ** parseConnectionResponse
+:PROPERTIES:
+:CUSTOM_ID: connectRes
+:END:
 Parsing the response to the connect request
 Much simpler than creating the request itself, the response is received, and then every part is separated into a property of an object, which is returned.
 The response structure is similar to the request (see below), but the action is the first value, then the transaction_id, and then the connection_id.
@@ -214,6 +232,9 @@ Offset  Size            Name            Value
 #+END_SRC
 
 ** buildAnnounceRequest
+:PROPERTIES:
+:CUSTOM_ID: announceReq
+:END:
 This is the announce request
 It follows the same idea of the connection request, but it has several more values. It is 98 bytes long. It would be too long to explain every part individually, so just check the graph below.
 
@@ -282,6 +303,9 @@ The number of peers the client wants to receive. Assuming here that -1 is someth
 The port the client is listening. Apparently, BitTorrent standardized using ports between 6881-6889, so I've got 6881 as the default for the method arg, but it can be overloaded.
 
 ** parseAnnounceReponse
+:PROPERTIES:
+:CUSTOM_ID: announceRes
+:END:
 Parsing the response to the announce request
 More complicated than it looked for me. The layout is in the graph below, but up until the seeders, it was easy: just like the connect response, just get the value at the exact position. But the peers, that's harder. The number of peers is not fixed, so it needs to be dynamic. In the generic utils file, there's the getPeerGroup method, the explanation will be there, and after, they're mapped to a callback, and returned as (I hope) a nice array of peers.
 *slice: interprets it as an array, starts at byte 20, gets the next 6 bytes as the specification says.
