@@ -1,30 +1,15 @@
-#+TITLE: Download
-#+DESCRIPTION: Methods related to downloading
-#+PROPERTY: :tangle "./download.js"
-
-* Code
-** Imports
-#+begin_src js :tangle yes
 import net from 'net';
 import { Buffer } from 'buffer';
 import { getPeers } from './tracker.js';
 import { parseMsg, buildRequest } from './message.js';
-#+end_src
-** Methods
-*** downloadTorrent
-Requested is a list of all the already requested pieces, and it will be passed to all socket connections
-#+begin_src js :tangle yes
+
 const downloadTorrent = torrent => {
     const requested = [];
     getPeers(torrent, peers => {
         peers.forEach(peer => download(peer, torrent, requested));
     });
 };
-#+end_src
-*** download
-Info: [[#downloadInfo][download]]
-The queue states every piece requested, like the previous requested array, but this one is specific to every connection, so that we can tell to which peer we requested which piece
-#+begin_src js :tangle yes
+
 const download = (peer, torrent, requested) => {
     const queue = [];
     const socket = net.Socket();
@@ -37,9 +22,7 @@ const download = (peer, torrent, requested) => {
     //    //handle response
     //});
 };
-#+end_src
-*** onWholeMsg
-#+begin_src js :tangle yes
+
 const onWholeMsg(socket, callback){
     let savedBuffer = Buffer.alloc(0);
     let handshake = true;
@@ -55,9 +38,7 @@ const onWholeMsg(socket, callback){
         }
     }); // something something saves all messages, waits for the saved buffer to have the full message, then slices it
 };
-#+end_src
-*** msgHandler
-#+begin_src js :tangle yes
+
 const msgHandler = (msg, socket, requested, queue){
    if(isHandshake(msg))
        socket.write(buildInterested());
@@ -71,28 +52,20 @@ const msgHandler = (msg, socket, requested, queue){
        if (m.id === 7) pieceHandler(m.payload, socket, requested, queue);
    }
 };
-#+end_src
-*** isHandshake
-#+begin_src js :tangle yes
+
 const isHandshake = msg => {
     return msg.lenght === msg.readUInt8(0) + 49 &&
         msg.toString('utf8', 1) === 'BitTorrent protocol';
 };
-#+end_src
-*** chokeHandler
-#+begin_src js :tangle yes
+
 const chokeHandler = () => {
 
 };
-#+end_src
-*** unchokeHandler
-#+begin_src js :tangle yes
+
 const unchokeHandler = () => {
 
 };
-#+end_src
-*** haveHandler
-#+begin_src js :tangle yes
+
 const haveHandler = (payload, socket, requested, queue) => {
     const pieceIndex = payload.readUInt32BE(0);
     queue.push(piece.index)
@@ -100,22 +73,16 @@ const haveHandler = (payload, socket, requested, queue) => {
         requestPiece(socket, requested, queue);
     }
 };
-#+end_src
-*** bitfieldHandler
-#+begin_src js :tangle yes
+
 const bitfieldHandler = payload => {
 
 };
-#+end_src
-*** pieceHandler
-#+begin_src js :tangle yes
+
 const pieceHandler = (payload, socket, requested, queue) => {
     queue.shift();
     requestPiece(socket, requested, queue);
 };
-#+end_src
-*** requestPiece
-#+begin_src js :tangle yes
+
 const requestPiece = (socket, requested, queue) => {
     if(requested[queue[0]]){
         queue.shift();
@@ -126,19 +93,7 @@ const requestPiece = (socket, requested, queue) => {
         socket.write(buildRequest(pieceIndex));
     }
 };
-#+end_src
-** Exports
-#+begin_src js :tangle yes
+
 export {
     downloadTorrent
 }
-#+end_src
-* Reference
-** download
-:PROPERTIES:
-:CUSTOM_ID: downloadInfo
-:END:
-Defines the socket, and sets the actions on socket events.
-On error, logs the error message (might change in the future, testing for now).
-On connection, *not implemented yet*.
-On data reception, *not implemented yet*.
