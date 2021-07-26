@@ -13,7 +13,7 @@ import crypto from 'crypto';
 let id = null;
 #+END_SRC
 
-** Methods
+** Functions
 *** genPeerId
 #+BEGIN_SRC js :tangle yes
 const genPeerId = () => {
@@ -50,4 +50,4 @@ The peer id defines an unique peer (captain obvious here). For generating it, it
 I used et001 because *Victor's Torrent* and version 0001 because I have no idea how one would go about versioning this.
 ** getPeerGroup
 Gets the number of peers.
-Receives the actual iterable (the bytes in the announce response that contain the information) and the size of each group/peer (which is always 6). Then, separates each peer by slicing with the current index, and adds it to an array, which is returned by the method.
+Receives the actual iterable (the bytes in the announce response that contain the information) and the size of each group/peer (which is always 6). Then, separates each peer by slicing with the current index, and adds it to an array, which is returned by the function.

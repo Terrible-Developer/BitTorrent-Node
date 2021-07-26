@@ -18,9 +18,6 @@ const download = (peer, torrent, requested) => {
         //write message
     });
     onWholeMsg(socket, msg => msgHandler(msg, socket, requested, queue));
-    //socket.on('data', data => {
-    //    //handle response
-    //});
 };
 
 const onWholeMsg(socket, callback){

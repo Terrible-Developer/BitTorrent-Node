@@ -9,7 +9,7 @@ import { Buffer } from 'buffer';
 import { getInfoHash } from './torrent-handler.js';
 import { genPeerId } from './generic-utils.js';
 #+end_src
-** Methods
+** Functions
 *** buildHandshake
 #+begin_src js :tangle yes
 const buildHandshake = torrent => {

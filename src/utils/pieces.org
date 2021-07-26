@@ -1,0 +1,54 @@
+#+TITLE: Pieces
+#+DESCRIPTION: Handler of data pieces
+#+PROPERTY: :tangle "pieces.js"
+
+* Code
+** Imports
+** Classes
+*** Piece Class
+#+begin_src js :tangle yes
+class Pieces {
+    constructor(size){
+        this.requested = new Array(size).fill(false);
+        this.received = new Array(size).fill(false);
+    };
+
+    addRequested(pieceIndex){
+        this.requested[pieceIndex] = true;
+    };
+
+    addReceived(pieceIndex){
+        this.requested[pieceIndex] = true;
+    };
+
+    needed(pieceIndex){
+        if(this.requested.every(i => i === true)){
+            this.requested = this.received.slice();
+        }
+        return !this.requested[pieceIndex];
+    };
+
+    isDone(){
+        return this.received.every(i => i === true);
+    };
+}
+#+end_src
+** Exports
+#+begin_src js :tangle yes
+export{
+    Pieces
+}
+#+end_src
+* Reference
+** Piece class
+This class serves as an list-controlling object, so that we can mantain both the received and requested lists without much hassle, and then actually use them without creating a update nightmare. It has a simple constructor and methods that act as basically getters and setters, for simplicity's sake.
+*** constructor
+The constructor creates two arrays, whose size is received as a parameter, and fills all positions with false.
+*** addRequested
+Receives the index of the requested piece, and changes that same index in the requested array to true, to signal that said piece has already been requested.
+*** addReceived
+Identical to addRequested, only difference beign is that it changes the received array instead of requested.
+*** needed
+Checks if all the pieces have been requested, and in case they have, copies the received list to the requested one. That is to check if there are any pieces that have been requested but not received. After the check, it returns the opposite of a check for the current piece.
+*** isDone
+Checks if every index on the received array is true

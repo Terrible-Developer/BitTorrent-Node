@@ -1,5 +1,5 @@
 #+TITLE: Torrent Handler
-#+DESCRIPTION: Methods related to handling the actual torrent file and its contents
+#+DESCRIPTION: Functions related to handling the actual torrent file and its contents
 #+PROPERTY: :tangle "./torrent-handler.js"
 
 * Code
@@ -11,7 +11,7 @@ import crypto from 'crypto';
 import bignum from 'bignum';
 #+END_SRC
 
-** Methods
+** Functions
 *** openTorrent
 #+BEGIN_SRC js :tangle yes
 const openTorrent = torrentPath => {
@@ -45,9 +45,9 @@ export {
 
 * Reference
 ** openTorrent
-The basic decoding of the .torrent file. Using the bencode module, and the decode method, we get the information of the file in a usable format.
+The basic decoding of the .torrent file. Using the bencode module, and the decode function, we get the information of the file in a usable format.
 ** getInfoHash
-Torrents usually use an infohash, a hashed value of all the torrent data. This method is re-enconding part of the torrent, so maybe it could be refactored to take the original torrent, but I'm currently not sure if it would be possible to pick what part to use doing it like that.
+Torrents usually use an infohash, a hashed value of all the torrent data. This function is re-enconding part of the torrent, so maybe it could be refactored to take the original torrent, but I'm currently not sure if it would be possible to pick what part to use doing it like that.
 After encoding the info section of the torrent, I hash it with the crypto module (using the sha1 algorithm, no idea if this is a convetion or if it only works with this algorithm, will update this section if I find out), and return it.
 ** getTorrentSize
-This method is an helper to calculate the left property of the announce request. The left property defines what's left to download from the torrent (this is explained in the tracker.org section about the announce, too). It checks either the length property itself, or, if the torrent has more than one file (as it is usually the case), the info.files property, which contains the remaining files.
+This function is an helper to calculate the left property of the announce request. The left property defines what's left to download from the torrent (this is explained in the tracker.org section about the announce, too). It checks either the length property itself, or, if the torrent has more than one file (as it is usually the case), the info.files property, which contains the remaining files.

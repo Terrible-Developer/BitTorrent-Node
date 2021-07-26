@@ -2,8 +2,6 @@
 #+DESCRIPTION: file related to the torrent tracker
 #+PROPERTY: :tangle "./tracker.js"
 
-* Explanation
-There is no explanation so far, this is just a placeholder
 * Code
 ** Imports
 #+BEGIN_SRC js :tangle yes
@@ -15,7 +13,7 @@ import { genInfoHash, getTorrentSize } from './torrent-handler.js';
 import { genPeerId, getPeerGroup } from './generic-utils.js';
 #+END_SRC
 
-** Methods
+** Functions
 *** udpSend
 Sends a message through the udp socket
 #+BEGIN_SRC js :tangle yes
@@ -213,7 +211,7 @@ Creating the connection_id with the value stated by the documentation (0x4172710
 *** 3. action type
 Passing the action type to the buffer (0 in this case, for connect)
 *** 4. transaction_id
-Since this needs to be a random value, the crypto module can be used. After importing it, and after passing all the other values to the buffer, the random value can be generated with the randomBytes method, specifyng the number of bytes it should return; And then, with the copy method, it is copied to the message buffer, with the offset of 12, setting the starting position
+Since this needs to be a random value, the crypto module can be used. After importing it, and after passing all the other values to the buffer, the random value can be generated with the randomBytes function, specifyng the number of bytes it should return; And then, with the copy function, it is copied to the message buffer, with the offset of 12, setting the starting position
 
 ** parseConnectionResponse
 :PROPERTIES:
@@ -291,7 +289,7 @@ Just wingin' it here, but my guess would be how much has been uploaded, just lik
 Warns about an event. The types of events are listed in the announce request graph above this section.
 
 *** 11. ip address
-It's becoming an common theme with these last ones that I just guess what they are (Still writing everything, haven't had a chance to actually see and use some of these methods yet), but it looks like this one is just the IP of (probably) the receiver.
+It's becoming an common theme with these last ones that I just guess what they are (Still writing everything, haven't had a chance to actually see and use some of these functions yet), but it looks like this one is just the IP of (probably) the receiver.
 
 *** 12. key
 A key, not sure exactly what for, but a key nonetheless. It seems like it can just be a random 4-byte value.
@@ -300,14 +298,14 @@ A key, not sure exactly what for, but a key nonetheless. It seems like it can ju
 The number of peers the client wants to receive. Assuming here that -1 is something akin to unlimited.
 
 *** 14. port
-The port the client is listening. Apparently, BitTorrent standardized using ports between 6881-6889, so I've got 6881 as the default for the method arg, but it can be overloaded.
+The port the client is listening. Apparently, BitTorrent standardized using ports between 6881-6889, so I've got 6881 as the default for the function arg, but it can be overloaded.
 
 ** parseAnnounceReponse
 :PROPERTIES:
 :CUSTOM_ID: announceRes
 :END:
 Parsing the response to the announce request
-More complicated than it looked for me. The layout is in the graph below, but up until the seeders, it was easy: just like the connect response, just get the value at the exact position. But the peers, that's harder. The number of peers is not fixed, so it needs to be dynamic. In the generic utils file, there's the getPeerGroup method, the explanation will be there, and after, they're mapped to a callback, and returned as (I hope) a nice array of peers.
+More complicated than it looked for me. The layout is in the graph below, but up until the seeders, it was easy: just like the connect response, just get the value at the exact position. But the peers, that's harder. The number of peers is not fixed, so it needs to be dynamic. In the generic utils file, there's the getPeerGroup function, the explanation will be there, and after, they're mapped to a callback, and returned as (I hope) a nice array of peers.
 *slice: interprets it as an array, starts at byte 20, gets the next 6 bytes as the specification says.
 Note: Just as it was it building the announce, this format of parsing it is for ipv4 requests. ipv6 are a little different.
 

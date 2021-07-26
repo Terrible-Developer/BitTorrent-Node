@@ -1,5 +1,5 @@
 #+TITLE: Download
-#+DESCRIPTION: Methods related to downloading
+#+DESCRIPTION: Functions related to downloading
 #+PROPERTY: :tangle "./download.js"
 
 * Code
@@ -8,16 +8,17 @@
 import net from 'net';
 import { Buffer } from 'buffer';
 import { getPeers } from './tracker.js';
-import { parseMsg, buildRequest } from './message.js';
+import { parseMsg, buildRequest, buildHandshake } from './message.js';
+import { Pieces } from './pieces.js';
 #+end_src
-** Methods
+** Functions
 *** downloadTorrent
 Requested is a list of all the already requested pieces, and it will be passed to all socket connections
 #+begin_src js :tangle yes
 const downloadTorrent = torrent => {
-    const requested = [];
     getPeers(torrent, peers => {
-        peers.forEach(peer => download(peer, torrent, requested));
+        const pieces = new Pieces(torrent.info.pieces.length / 20);
+        peers.forEach(peer => download(peer, torrent, pieces));
     });
 };
 #+end_src
@@ -25,17 +26,14 @@ const downloadTorrent = torrent => {
 Info: [[#downloadInfo][download]]
 The queue states every piece requested, like the previous requested array, but this one is specific to every connection, so that we can tell to which peer we requested which piece
 #+begin_src js :tangle yes
-const download = (peer, torrent, requested) => {
-    const queue = [];
+const download = (peer, torrent, pieces) => {
     const socket = net.Socket();
     socket.on('error', console.log);
     socket.connect(peer.port, peer.ip, () => {
-        //write message
+        socket.write(buildHandshake(torrent));
     });
-    onWholeMsg(socket, msg => msgHandler(msg, socket, requested, queue));
-    //socket.on('data', data => {
-    //    //handle response
-    //});
+    const queue = { choked: true, queue: [] };
+    onWholeMsg(socket, msg => msgHandler(msg, socket, pieces, queue));
 };
 #+end_src
 *** onWholeMsg
@@ -58,7 +56,7 @@ const onWholeMsg(socket, callback){
 #+end_src
 *** msgHandler
 #+begin_src js :tangle yes
-const msgHandler = (msg, socket, requested, queue){
+const msgHandler = (msg, socket, pieces, queue){
    if(isHandshake(msg))
        socket.write(buildInterested());
    else{
@@ -66,7 +64,7 @@ const msgHandler = (msg, socket, requested, queue){
 
        if (m.id === 0) chokeHandler();
        if (m.id === 1) unchokeHandler();
-       if (m.id === 4) haveHandler(m.payload, socket, requested, queue);
+       if (m.id === 4) haveHandler(m.payload, socket, pieces, queue);
        if (m.id === 5) bitfieldHandler(m.payload);
        if (m.id === 7) pieceHandler(m.payload, socket, requested, queue);
    }
@@ -81,14 +79,15 @@ const isHandshake = msg => {
 #+end_src
 *** chokeHandler
 #+begin_src js :tangle yes
-const chokeHandler = () => {
-
+const chokeHandler = socket => {
+    socket.end();
 };
 #+end_src
 *** unchokeHandler
 #+begin_src js :tangle yes
-const unchokeHandler = () => {
-
+const unchokeHandler = (socket, pieces, queue) => {
+    queue.choked = false;
+    requestPiece(socket, pieces, queue);
 };
 #+end_src
 *** haveHandler
@@ -116,14 +115,16 @@ const pieceHandler = (payload, socket, requested, queue) => {
 #+end_src
 *** requestPiece
 #+begin_src js :tangle yes
-const requestPiece = (socket, requested, queue) => {
-    if(requested[queue[0]]){
-        queue.shift();
-    }
-    else{
-        //inb4
-        //eventually will be correctly implemented
-        socket.write(buildRequest(pieceIndex));
+const requestPiece = (socket, pieces, queue) => {
+    if(queue.choked)
+        return null;
+    while(queue.queue.length){
+        const pieceIndex = queue.shift();
+        if(pieces.needed(pieceIndex)){
+            socket.write(buildRequest(pieceIndex));
+            pieces.addRequested(pieceIndex);
+            break;
+        }
     }
 };
 #+end_src
@@ -134,11 +135,26 @@ export {
 }
 #+end_src
 * Reference
+Currently missing several functions, will try to finish, having some trouble actually finishing the code itself right now.
+** downloadTorrent
+Receives the torrent, then calls getPeers, and the callback function creates a pieces instance (which will be passed around by all the function calls in this file, and will serve as the global queue), and calls the download function for each peer.
 ** download
 :PROPERTIES:
 :CUSTOM_ID: downloadInfo
 :END:
 Defines the socket, and sets the actions on socket events.
 On error, logs the error message (might change in the future, testing for now).
-On connection, *not implemented yet*.
-On data reception, *not implemented yet*.
+On connection, builds the handshake.
+Calls the onWholeMsg function, and passess a callback that takes a message and calls msgHandler.
+
+** onWholeMsg
+The idea behind this function is that, to avoid constantly passing small pieces, we wait until the message has enough size to be an entire message.
+First, we take a socket and a callback function as parameters. Then, a buffer is allocated and a handshake boolean is declared.
+The first message received will always be the handshake, so it's set to true, and when the first full message is received, it's set to false.
+The socket.on callback is called, and then callback is where the message is saved. We get the length of the message by checking if it's not a handshake (if it is, the length will be 49 bytes long, and 4 if not).
+After that, we concatenate the current buffer (savedBuffer) and the received one from the socket, and then check if it is big enough to be a full mesage. If it is, we call the callback passing the sliced buffer to have the exact size of the message and then cut that part of the current buffer (also, setting the handshake to false as mentioned before).
+
+** msgHandler
+Pretty simple function: Gets all the information (the message itself, the socket, the pieces object and the queue) and checks the message.
+If it's a handshake, then calls writes the interested message; if not, then checks the id and calls the appropriate handler.
+
